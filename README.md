@@ -6,17 +6,11 @@ This project analyzes customer purchasing behavior using the Olist Brazilian E-c
 
 ⏱️ Delivery Delays: Actual vs. Estimated delivery dates
 
-🌟 Review Scores: Correlation with delivery and product categories
-
 📦 Top Products and Categories by sales volume
-
-🛍️ Repeat Customers and customer segmentation
-
-📍 Regional Analysis: Behavior trends by ZIP code using geolocation data
 
 ⚠️ Late Delivery Trends per seller
 
-💳 Optional: Detecting unusual payment behavior (fraud-like patterns)
+💳 Preferred payment method
 
 🗄️ Tools Used
 PostgreSQL – Data querying and transformations
