@@ -1,9 +1,11 @@
--- 1. Basic customer behaviour
+-- 1. Basic customer behavior
 -- Number of unique customers
 SELECT DISTINCT
 	COUNT(CUSTOMER_ID) AS TOTAL_CUSTOMERS
 FROM
 	CUSTOMERS;
+
+
 
 -- Number of order per customers
 SELECT
@@ -13,6 +15,8 @@ FROM
 	ORDERS
 GROUP BY
 	CUSTOMER_ID;
+
+
 
 -- Average review score per customer
 SELECT
@@ -24,7 +28,9 @@ FROM
 GROUP BY
 	O.CUSTOMER_ID;
 
--- Payment method behaviour
+
+
+-- Payment method behavior
 SELECT
 	P.PAYMENT_TYPE AS PAYMENT_METHOD,
 	COUNT(O.CUSTOMER_ID) AS TOTAL_CUSTOMERS
@@ -36,7 +42,9 @@ GROUP BY
 ORDER BY
 	TOTAL_CUSTOMERS DESC;
 
--- 2. Spending behaviour
+
+
+-- 2. Spending behavior
 -- Total and average payment per order
 SELECT
 	ORDER_ID,
@@ -45,6 +53,8 @@ FROM
 	ORDER_PAYMENTS
 GROUP BY
 	ORDER_ID;
+
+
 
 -- Total spending per customer
 SELECT
@@ -58,8 +68,10 @@ GROUP BY
 ORDER BY
 	TOTAL_SPENT DESC;
 
+
+
 -- 3. Delivery and Timelines
--- Delivery time(astimated vs actual)
+-- Delivery time(estimated vs actual)
 SELECT
 	ORDER_ID,
 	ORDER_ESTIMATED_DELIVERY_DATE,
@@ -75,7 +87,10 @@ FROM
 WHERE
 	ORDER_STATUS = 'delivered';
 
--- Top catogories by number of orders
+
+
+
+-- Top categories by number of orders
 SELECT
 	P.PRODUCT_CATEGORY_NAME AS CATEGORY,
 	COUNT(O.ORDER_ID) TOTAL_ORDER
@@ -88,6 +103,8 @@ ORDER BY
 	TOTAL_ORDER DESC
 LIMIT
 	10;
+
+
 
 -- Average order value per customer
 SELECT
@@ -106,7 +123,10 @@ GROUP BY
 ORDER BY
 	AVG_ORDER_VALUE DESC;
 
--- Clustre customer behaviour
+
+
+
+-- Cluster customer behavior
 WITH
 	ORDER_SUMMARY AS (
 		SELECT
@@ -145,8 +165,11 @@ FROM
 	ORDER_SUMMARY OS
 	JOIN REVIEW_SUMMARY RS ON OS.CUSTOMER_ID = RS.CUSTOMER_ID;
 
+
+
+
 -- Seller with most delayed orders
-WITH SELLERS_BEHAVIOUR AS (
+WITH SELLERS_behavior AS (
     SELECT
         S.SELLER_ID,
         EXTRACT(DAY FROM O.ORDER_DELIVERED_CUSTOMER_DATE - O.ORDER_ESTIMATED_DELIVERY_DATE) AS DELAYED_DAYS,
@@ -164,13 +187,15 @@ SELECT
     SELLER_ID,
     COUNT(*) AS TOTAL_DELAYED_ORDERS
 FROM
-    SELLERS_BEHAVIOUR
+    SELLERS_behavior
 WHERE
     DELIVERY_STATUS = 'Late'
 GROUP BY
     SELLER_ID
 ORDER BY
     TOTAL_DELAYED_ORDERS DESC;
+
+
 
 
 -- Sellers with longest delivery time
@@ -201,3 +226,95 @@ ORDER BY
 LIMIT
 	10;
 
+
+
+-- Category profitability
+SELECT
+	P.PRODUCT_CATEGORY_NAME,
+	SUM(OI.PRICE + OI.FREIGHT_VALUE) AS TOTAL_REVENUE
+FROM
+	ORDER_ITEMS OI
+	JOIN PRODUCTS P ON OI.PRODUCT_ID = P.PRODUCT_ID
+GROUP BY
+	P.PRODUCT_CATEGORY_NAME
+ORDER BY
+	TOTAL_REVENUE DESC;
+
+
+
+
+-- Total revenue per month
+SELECT
+	TO_CHAR(
+		DATE_TRUNC('month', O.ORDER_PURCHASE_TIMESTAMP),
+		'YYYY-MM'
+	) AS YEAR_MONTH,
+	SUM(OI.PRICE + OI.FREIGHT_VALUE) AS TOTAL_REVENUE
+FROM
+	ORDER_ITEMS OI
+	JOIN ORDERS O ON OI.ORDER_ID = O.ORDER_ID
+WHERE
+	EXTRACT(
+		YEAR
+		FROM
+			O.ORDER_PURCHASE_TIMESTAMP
+	) IN (2017, 2018)
+GROUP BY
+	YEAR_MONTH
+ORDER BY
+	YEAR_MONTH;
+
+
+-- Top category by revenue
+SELECT
+	P.PRODUCT_CATEGORY_NAME AS CATEGORY,
+	SUM(OI.PRICE + OI.FREIGHT_VALUE) AS TOTAL_REVENUE
+FROM
+	PRODUCTS P
+	JOIN ORDER_ITEMS OI ON OI.PRODUCT_ID = P.PRODUCT_ID
+GROUP BY
+	CATEGORY
+ORDER BY
+	TOTAL_REVENUE DESC
+LIMIT
+	10;
+
+
+
+-- Repeat customers
+WITH
+	CUSTOMER_ORDER AS (
+		SELECT
+			CUSTOMER_ID,
+			COUNT(ORDER_ID) AS NUMBER_OF_ORDERS
+		FROM
+			ORDERS
+		GROUP BY
+			CUSTOMER_ID
+	)
+SELECT
+	ROUND(
+		100 * COUNT(
+			CASE
+				WHEN NUMBER_OF_ORDERS > 1 THEN 1
+			END
+		) / COUNT(*),
+		2
+	) AS REPEAT_PERCENTAGE
+FROM
+	CUSTOMER_ORDER;
+
+
+
+-- Revenue by customer state
+SELECT
+	C.CUSTOMER_STATE AS STATE,
+	SUM(OI.PRICE + OI.FREIGHT_VALUE) AS TOTAL_REVENUE
+FROM
+	CUSTOMERS C
+	JOIN ORDERS O ON O.CUSTOMER_ID = C.CUSTOMER_ID
+	JOIN ORDER_ITEMS OI ON OI.ORDER_ID = O.ORDER_ID
+GROUP BY
+	STATE
+ORDER BY
+	TOTAL_REVENUE DESC;
